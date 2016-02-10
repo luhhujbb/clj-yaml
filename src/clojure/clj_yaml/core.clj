@@ -4,6 +4,7 @@
   (:import (org.yaml.snakeyaml Yaml DumperOptions DumperOptions$FlowStyle)
            (org.yaml.snakeyaml.constructor Constructor SafeConstructor)
            (org.yaml.snakeyaml.representer Representer)
+           (org.yaml.snakeyaml.emitter Emitter)
            (clj_yaml MarkedConstructor)
            (java.util LinkedHashMap)))
 
@@ -13,9 +14,18 @@
    :flow DumperOptions$FlowStyle/FLOW})
 
 (defn make-dumper-options
-  [& {:keys [flow-style]}]
+  "Make a dumper with some interesting dumping options"
+  [{:keys [flow-style indent pretty-flow best-width canonical allow-read-only-properties]
+    ;;These default values are replicated org.yaml.snakeyaml.DumperOption default
+    :or {flow-style :auto indent 2 pretty-flow false best-width 80 canonical false allow-read-only-properties false}
+    }]
   (doto (DumperOptions.)
-    (.setDefaultFlowStyle (flow-styles flow-style))))
+    (.setDefaultFlowStyle (flow-styles flow-style))
+    (.setIndent (int indent))
+    (.setPrettyFlow (boolean pretty-flow))
+    (.setWidth (int best-width))
+    (.setCanonical (boolean canonical))
+    (.setAllowReadOnlyProperties (boolean allow-read-only-properties))))
 
 (defn make-yaml
   "Make a yaml encoder/decoder with some given options."
@@ -25,7 +35,7 @@
             (if mark (MarkedConstructor.) (SafeConstructor.)))
         ;; TODO: unsafe marked constructor
         dumper (if dumper-options
-                 (make-dumper-options :flow-style (:flow-style dumper-options))
+                 (make-dumper-options dumper-options)
                  (DumperOptions.))]
     (Yaml. constructor (Representer.) dumper)))
 
